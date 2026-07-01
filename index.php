@@ -50,34 +50,49 @@ function ev_type_label(string $type): string {
 <a class="skip-link" href="#main-content">Przejdź do treści</a>
 
 <div class="topbar">
-  <span class="topbar-brand"><?= h($brand) ?></span>
+  <span class="topbar-brand"><span class="bolt" aria-hidden="true"></span><?= h($brand) ?></span>
   <a class="link-btn" href="<?= h($feer_url) ?>">← feer.org.pl</a>
 </div>
 
-<div class="container">
-  <header class="page-header">
+<div class="hero">
+  <div class="hero-inner">
     <h1>Wydarzenia online</h1>
     <p class="subtitle"><?= h($subtitle) ?></p>
-  </header>
+    <div class="hero-stats">
+      <div class="hero-stat"><b><?= count($upcoming) ?></b><span>Nadchodzące</span></div>
+      <div class="hero-stat"><b><?= count($archive) ?></b><span>W archiwum</span></div>
+    </div>
+  </div>
+</div>
 
+<div class="container">
   <main id="main-content">
 
     <section class="events-section" aria-labelledby="upcoming-title">
-      <h2 class="section-title" id="upcoming-title"><span class="dot" style="background:var(--blue)"></span>Nadchodzące wydarzenia</h2>
+      <div class="section-head">
+        <h2 class="section-title" id="upcoming-title">
+          <span class="section-icon upcoming" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></span>
+          Nadchodzące wydarzenia
+        </h2>
+        <?php if ($upcoming): ?><span class="section-count"><?= count($upcoming) ?></span><?php endif; ?>
+      </div>
       <?php if (!$upcoming): ?>
         <p class="empty-note">Brak zaplanowanych wydarzeń — zapraszamy wkrótce.</p>
       <?php else: ?>
       <ul class="grid">
         <?php foreach ($upcoming as $i => $ev): $accent = event_accent($ev, $i); ?>
         <li class="card <?= $accent !== 'blue' ? h($accent) : '' ?>">
-          <div class="card-accent"></div>
           <div class="card-body">
-            <span class="card-date">
-              <time datetime="<?= h(date('Y-m-d', strtotime($ev['start_at']))) ?>"><?= h(fmt_datetime($ev['start_at'])) ?></time>
+            <div class="card-top-row">
+              <span class="card-date">
+                <time datetime="<?= h(date('Y-m-d', strtotime($ev['start_at']))) ?>"><?= h(fmt_datetime($ev['start_at'])) ?></time>
+              </span>
               <span class="card-type-badge"><?= h(ev_type_label($ev['type'])) ?></span>
-            </span>
+            </div>
             <h2 class="card-title"><?= h($ev['title']) ?></h2>
-            <?php if ($ev['presenter']): ?><p class="card-presenter"><?= h($ev['presenter']) ?></p><?php endif; ?>
+            <?php if ($ev['presenter']): ?>
+              <p class="card-presenter"><span class="avatar"><?= h(initials($ev['presenter'])) ?></span><?= h($ev['presenter']) ?></p>
+            <?php endif; ?>
             <?php if ($ev['type'] === 'stationary' && $ev['venue']): ?><p class="card-venue"><?= h($ev['venue']) ?></p><?php endif; ?>
           </div>
           <div class="card-footer">
@@ -92,20 +107,30 @@ function ev_type_label(string $type): string {
     </section>
 
     <section class="events-section" aria-labelledby="archive-title">
-      <h2 class="section-title" id="archive-title"><span class="dot" style="background:var(--green)"></span>Archiwum nagrań</h2>
+      <div class="section-head">
+        <h2 class="section-title" id="archive-title">
+          <span class="section-icon archive" aria-hidden="true"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+          Archiwum nagrań
+        </h2>
+        <?php if ($archive): ?><span class="section-count"><?= count($archive) ?></span><?php endif; ?>
+      </div>
       <?php if (!$archive): ?>
         <p class="empty-note">Archiwum jest jeszcze puste.</p>
       <?php else: ?>
       <ul class="grid">
-        <?php foreach ($archive as $i => $ev): $accent = event_accent($ev, $i); $recs = $recordings_by_event[$ev['id']] ?? []; ?>
+        <?php foreach ($archive as $i => $ev): $accent = event_accent($ev, $i); $recs = $recordings_by_event[$ev['id']] ?? [];
+              $pres_status = $ev['presentation_public'] ? $ev['presentation_status'] : 'none'; ?>
         <li class="card <?= $accent !== 'blue' ? h($accent) : '' ?>">
-          <div class="card-accent"></div>
           <div class="card-body">
-            <span class="card-date">
-              <?php if ($ev['start_at']): ?><time datetime="<?= h(date('Y-m-d', strtotime($ev['start_at']))) ?>"><?= h(fmt_date($ev['start_at'])) ?></time><?php endif; ?>
-            </span>
+            <?php if ($ev['start_at']): ?>
+            <div class="card-top-row">
+              <span class="card-date"><time datetime="<?= h(date('Y-m-d', strtotime($ev['start_at']))) ?>"><?= h(fmt_date($ev['start_at'])) ?></time></span>
+            </div>
+            <?php endif; ?>
             <h2 class="card-title"><?= h($ev['title']) ?></h2>
-            <?php if ($ev['presenter']): ?><p class="card-presenter"><?= h($ev['presenter']) ?></p><?php endif; ?>
+            <?php if ($ev['presenter']): ?>
+              <p class="card-presenter"><span class="avatar"><?= h(initials($ev['presenter'])) ?></span><?= h($ev['presenter']) ?></p>
+            <?php endif; ?>
           </div>
           <div class="card-footer">
             <?php foreach ($recs as $r): ?>
@@ -114,18 +139,18 @@ function ev_type_label(string $type): string {
                 <?= h($r['label']) ?>
               </a>
             <?php endforeach; ?>
-            <?php if ($ev['presentation_status'] === 'ready' && $ev['presentation_url']): ?>
+            <?php if ($pres_status === 'ready' && $ev['presentation_url']): ?>
               <a href="<?= h($ev['presentation_url']) ?>" class="btn btn-slides" target="_blank" rel="noopener">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><line x1="7" y1="21" x2="17" y2="21"/></svg>
                 Prezentacja
               </a>
-            <?php elseif ($ev['presentation_status'] === 'soon'): ?>
+            <?php elseif ($pres_status === 'soon'): ?>
               <span class="btn-soon">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Prezentacja – wkrótce
               </span>
             <?php endif; ?>
-            <?php if (!$recs && $ev['presentation_status'] === 'none'): ?>
+            <?php if (!$recs && $pres_status === 'none'): ?>
               <span class="btn-soon">
                 <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Nagranie – wkrótce

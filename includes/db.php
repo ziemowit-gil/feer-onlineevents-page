@@ -48,6 +48,7 @@ function db_migrate(PDO $pdo): void {
         is_visible           INTEGER NOT NULL DEFAULT 1,
         presentation_url     TEXT,
         presentation_status  TEXT NOT NULL DEFAULT 'none', -- none | soon | ready
+        presentation_public  INTEGER NOT NULL DEFAULT 1,
         accent               TEXT,
         position             INTEGER NOT NULL DEFAULT 0,
         last_synced_at       DATETIME,
@@ -65,6 +66,9 @@ function db_migrate(PDO $pdo): void {
 
     $pdo->exec("CREATE INDEX IF NOT EXISTS idx_recordings_event ON recordings(event_id)");
     $pdo->exec("CREATE INDEX IF NOT EXISTS idx_events_start ON events(start_at)");
+
+    // Kolumny dodane po pierwszym wdrożeniu (istniejące bazy) — błąd "duplicate column" ignorujemy.
+    try { $pdo->exec("ALTER TABLE events ADD COLUMN presentation_public INTEGER NOT NULL DEFAULT 1"); } catch (\Throwable $e) {}
 }
 
 function db_one(string $sql, array $params = []): ?array {

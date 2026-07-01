@@ -59,6 +59,14 @@ function event_accent(array $event, int $index): string {
     return $event['accent'] ?: EVENT_ACCENTS[$index % count(EVENT_ACCENTS)];
 }
 
+function initials(string $name): string {
+    $parts = preg_split('/\s+/', trim($name));
+    $parts = array_filter($parts);
+    if (!$parts) return '?';
+    if (count($parts) === 1) return mb_strtoupper(mb_substr($parts[0], 0, 2));
+    return mb_strtoupper(mb_substr(reset($parts), 0, 1) . mb_substr(end($parts), 0, 1));
+}
+
 const PRESENTATION_STATUS_LABELS = [
     'none'  => null,
     'soon'  => 'Prezentacja – wkrótce',

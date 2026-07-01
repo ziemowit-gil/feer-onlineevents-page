@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'accent'              => in_array($_POST['accent'] ?? '', ['blue', 'orange', 'green'], true) ? $_POST['accent'] : null,
         'presentation_status' => in_array($_POST['presentation_status'] ?? '', ['none', 'soon', 'ready'], true) ? $_POST['presentation_status'] : 'none',
         'presentation_url'    => trim($_POST['presentation_url'] ?? '') ?: null,
+        'presentation_public' => isset($_POST['presentation_public']) ? 1 : 0,
         'is_visible'          => isset($_POST['is_visible']) ? 1 : 0,
     ];
 
@@ -140,7 +141,8 @@ include dirname(__DIR__) . '/includes/admin_layout.php';
         <div class="row g-2 mb-2 align-items-center rec-row">
           <input type="hidden" name="rec_id[]" value="<?= (int)$r['id'] ?>">
           <div class="col-4"><input type="text" name="rec_label[]" class="form-control form-control-sm" placeholder="np. Część 1" value="<?= h($r['label']) ?>"></div>
-          <div class="col-6"><input type="url" name="rec_url[]" class="form-control form-control-sm" placeholder="https://..." value="<?= h($r['url']) ?>"></div>
+          <div class="col-5"><input type="url" name="rec_url[]" id="rec_url_<?= $i ?>" class="form-control form-control-sm" placeholder="https://..." value="<?= h($r['url']) ?>"></div>
+          <div class="col-1"><button type="button" class="btn btn-sm btn-outline-secondary btn-r2-browse" data-target="rec_url_<?= $i ?>" title="Przeglądaj R2"><i class="bi bi-cloud"></i></button></div>
           <div class="col-2 form-check">
             <input class="form-check-input" type="checkbox" name="rec_delete[]" value="<?= (int)$r['id'] ?>" id="del<?= (int)$r['id'] ?>">
             <label class="form-check-label small" for="del<?= (int)$r['id'] ?>">Usuń</label>
@@ -152,7 +154,8 @@ include dirname(__DIR__) . '/includes/admin_layout.php';
         <div class="row g-2 mb-2 align-items-center rec-row">
           <input type="hidden" name="rec_id[]" value="">
           <div class="col-4"><input type="text" name="rec_label[]" class="form-control form-control-sm" placeholder="np. Część 2"></div>
-          <div class="col-6"><input type="url" name="rec_url[]" class="form-control form-control-sm" placeholder="https://..."></div>
+          <div class="col-5"><input type="url" name="rec_url[]" class="form-control form-control-sm rec-url-new" placeholder="https://..."></div>
+          <div class="col-1"><button type="button" class="btn btn-sm btn-outline-secondary btn-r2-browse" title="Przeglądaj R2"><i class="bi bi-cloud"></i></button></div>
           <div class="col-2"></div>
         </div>
       </template>
@@ -188,7 +191,15 @@ include dirname(__DIR__) . '/includes/admin_layout.php';
       </div>
       <div class="mb-3">
         <label class="form-label">Link do prezentacji</label>
-        <input type="url" name="presentation_url" class="form-control" value="<?= h($event['presentation_url']) ?>">
+        <div class="input-group">
+          <input type="url" name="presentation_url" id="presentation_url" class="form-control" value="<?= h($event['presentation_url']) ?>">
+          <button type="button" class="btn btn-outline-secondary btn-r2-browse" data-target="presentation_url"><i class="bi bi-cloud"></i> R2</button>
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="presentation_public" id="presentation_public" <?= $event['presentation_public']?'checked':'' ?>>
+        <label class="form-check-label" for="presentation_public">Prezentacja upubliczniona</label>
+        <div class="form-text">Odznacz, żeby ukryć przycisk prezentacji na stronie publicznej — link i status zostają zapisane, ale nie są widoczne, dopóki nie zaznaczysz z powrotem.</div>
       </div>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" name="is_visible" id="is_visible" <?= $event['is_visible']?'checked':'' ?>>
