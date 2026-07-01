@@ -13,8 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = (string)($_POST['password'] ?? '');
     if (admin_login($username, $password)) {
+        // $next pochodzi z REQUEST_URI (require_admin()) — to już pełna ścieżka
+        // od hosta (z ewentualnym podkatalogiem wdrożenia), więc nie doklejamy APP_URL.
         $next = $_POST['next'] ?? '';
-        redirect($next && str_starts_with($next, '/') ? APP_URL . $next : APP_URL . '/admin/index.php');
+        redirect($next && str_starts_with($next, '/') ? $next : APP_URL . '/admin/index.php');
     }
     $error = 'Nieprawidłowy login lub hasło.';
 }
