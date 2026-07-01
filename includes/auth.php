@@ -15,7 +15,7 @@ function current_admin(): ?array {
     if (empty($_SESSION['admin_id'])) return null;
     static $cache = null;
     if ($cache === null) {
-        $cache = db_one("SELECT id, username FROM admins WHERE id=?", [$_SESSION['admin_id']]) ?: false;
+        $cache = db_one("SELECT id, username, email FROM admins WHERE id=?", [$_SESSION['admin_id']]) ?: false;
     }
     return $cache ?: null;
 }
@@ -27,14 +27,19 @@ function require_admin(): void {
     }
 }
 
+/** Zakłada sesję zalogowanego admina — wspólne dla logowania hasłem i przez Microsoft 365. */
+function admin_login_session(int $admin_id): void {
+    auth_start();
+    session_regenerate_id(true);
+    $_SESSION['admin_id'] = $admin_id;
+}
+
 function admin_login(string $username, string $password): bool {
     $admin = db_one("SELECT * FROM admins WHERE username=?", [$username]);
     if (!$admin || !password_verify($password, $admin['password_hash'])) {
         return false;
     }
-    auth_start();
-    session_regenerate_id(true);
-    $_SESSION['admin_id'] = (int)$admin['id'];
+    admin_login_session((int)$admin['id']);
     return true;
 }
 

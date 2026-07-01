@@ -27,13 +27,22 @@ W panelu kliknij „Synchronizuj z SZO”, żeby pobrać wydarzenia (albo poczek
 ```bash
 cp config.local.php.example config.local.php
 # ustaw SZO_FEED_URL (np. https://szo.feer.org.pl/events/public/feed.php) i APP_KEY
-
-php cli/install.php <login> <hasło>      # tworzy bazę + konto admina
 chmod -R u+w data/                       # katalog musi być zapisywalny
 ```
 
-Wskaż vhost `wydarzeniaonline.feer.org.pl` na katalog główny tego repo
-(`index.php` — strona publiczna, `admin/` — panel).
+Wskaż vhost (lub podkatalog na współdzielonym hostingu) na katalog główny tego repo
+(`index.php` — strona publiczna, `admin/` — panel, `install.php` — kreator instalacji).
+
+Konto admina załóż jednym z dwóch sposobów:
+
+**A) Graficzny kreator (bez SSH)** — wejdź w przeglądarce na `/install.php`.
+Formularz zakłada konto admina, opcjonalnie ustawia nazwę serwisu i adres feedu SZO,
+po czym od razu loguje i przekierowuje do panelu. Kreator **blokuje się trwale**
+po pierwszej udanej instalacji (dopóki w bazie istnieje choć jedno konto admina) —
+nie da się go użyć ponownie do przejęcia panelu.
+
+**B) CLI** — `php cli/install.php <login> <hasło> [e-mail]` (e-mail opcjonalny,
+przydatny do późniejszego logowania Microsoft 365).
 
 ### Synchronizacja z SZO
 
@@ -53,6 +62,22 @@ php cli/install.php <login> <nowe-hasło>   # istniejący login = reset hasła, 
 
 lub w panelu: **Ustawienia → Zmiana hasła** (tylko własne konto).
 
+### Logowanie Microsoft 365 (opcjonalne)
+
+Administratorzy mogą logować się kontem Microsoft 365 zamiast (lub obok) loginu i hasła.
+
+1. Zarejestruj aplikację w [Azure Portal → App registrations](https://portal.azure.com).
+2. Redirect URI (Web): `https://<twoja-domena>/admin/ms365_callback.php`.
+3. API permissions: `User.Read` (Microsoft Graph, delegated) — wystarczy domyślne.
+4. Utwórz Client secret (Certificates & secrets).
+5. W panelu: **Ustawienia → Logowanie Microsoft 365** — wklej Tenant ID, Application
+   (client) ID i Client secret.
+6. W **Ustawienia → Twoje konto** ustaw adres e-mail zgodny z kontem Microsoft, którym
+   chcesz się logować (dopasowanie następuje po e-mailu — logowanie MS365 nigdy nie
+   tworzy nowych kont automatycznie).
+
+Po zapisaniu danych na ekranie logowania pojawi się przycisk „Zaloguj przez Microsoft 365”.
+
 ## Jak to działa
 
 - SZO udostępnia publiczny feed JSON pod `events/public/feed.php` (tylko wydarzenia
@@ -70,7 +95,8 @@ lub w panelu: **Ustawienia → Zmiana hasła** (tylko własne konto).
 - **Wydarzenia** — lista, filtry (wszystkie/nadchodzące/archiwum/ukryte), edycja,
   przełącznik widoczności na stronie publicznej, dodawanie/edycja nagrań i prezentacji.
 - **Ustawienia** — adres feedu SZO, treści strony publicznej (nazwa, stopka, loga,
-  informacja o finansowaniu), zmiana hasła.
+  informacja o finansowaniu), konfiguracja Cloudflare R2, logowanie Microsoft 365,
+  e-mail konta, zmiana hasła.
 
 Wpisy z SZO (`źródło: SZO`) mają tytuł/termin/miejsce tylko do odczytu — te dane
 edytuje się w SZO. Wpisy ręczne (`źródło: ręczny`) są w pełni edytowalne i można je usuwać.

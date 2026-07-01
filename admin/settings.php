@@ -5,6 +5,7 @@ require_once dirname(__DIR__) . '/includes/functions.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
 require_once dirname(__DIR__) . '/includes/s3_client.php';
 require_once dirname(__DIR__) . '/includes/r2.php';
+require_once dirname(__DIR__) . '/includes/ms365.php';
 
 require_admin();
 
@@ -33,6 +34,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['test_r2'])) {
         $t = s3_test_connection(r2_cfg());
         flash_set($t['ok'] ? 'success' : 'error', $t['msg']);
+    } elseif (isset($_POST['save_ms365'])) {
+        setting_set('ms_tenant_id', trim($_POST['ms_tenant_id'] ?? ''));
+        setting_set('ms_client_id', trim($_POST['ms_client_id'] ?? ''));
+        $sk = trim((string)($_POST['ms_client_secret'] ?? ''));
+        if ($sk !== '') {
+            setting_set('ms_client_secret', $sk);
+        }
+        flash_set('success', 'Konfiguracja Microsoft 365 zapisana.');
+    } elseif (isset($_POST['update_account'])) {
+        $admin = current_admin();
+        $email = trim($_POST['account_email'] ?? '') ?: null;
+        if ($email && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            flash_set('error', 'Nieprawidłowy adres e-mail.');
+        } else {
+            $taken = $email ? db_one("SELECT id FROM admins WHERE email=? AND id!=?", [$email, $admin['id']]) : null;
+            if ($taken) {
+                flash_set('error', 'Ten adres e-mail jest już przypisany do innego konta.');
+            } else {
+                db_update('admins', ['email' => $email], $admin['id']);
+                flash_set('success', 'Adres e-mail zapisany.');
+            }
+        }
     } elseif (isset($_POST['change_password'])) {
         $admin = current_admin();
         $current = (string)($_POST['current_password'] ?? '');
@@ -174,6 +197,54 @@ include dirname(__DIR__) . '/includes/admin_layout.php';
     <button type="submit" name="test_r2" value="1" class="btn btn-sm btn-outline-secondary w-100" <?= $r2ready ? '' : 'disabled' ?>>
       <i class="bi bi-plug me-1"></i>Testuj połączenie z R2
     </button>
+  </form>
+
+  <?php $ms_ready = ms365_available(); ?>
+  <form method="post" class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+      Logowanie Microsoft 365
+      <span class="badge <?= $ms_ready ? 'bg-success' : 'bg-secondary' ?>"><?= $ms_ready ? 'aktywne' : 'wyłączone' ?></span>
+    </div>
+    <div class="card-body">
+      <?= csrf_field() ?>
+      <p class="text-muted small">Pozwala administratorom logować się kontem Microsoft 365 zamiast (lub obok)
+        loginu i hasła. Wymaga rejestracji aplikacji w Azure AD.</p>
+      <div class="mb-2">
+        <label class="form-label">Tenant ID</label>
+        <input type="text" name="ms_tenant_id" class="form-control form-control-sm" value="<?= h(setting('ms_tenant_id')) ?>" placeholder="np. a1b2c3d4-...">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Application (client) ID</label>
+        <input type="text" name="ms_client_id" class="form-control form-control-sm" value="<?= h(setting('ms_client_id')) ?>">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Client secret</label>
+        <input type="password" name="ms_client_secret" class="form-control form-control-sm" value="" autocomplete="off" placeholder="<?= setting('ms_client_secret') !== '' ? '•••••• (zostaw puste, by nie zmieniać)' : '' ?>">
+      </div>
+      <div class="form-text mb-2">
+        Redirect URI do zarejestrowania w Azure AD:<br>
+        <code><?= h(ms365_redirect_uri()) ?></code>
+      </div>
+      <button type="submit" name="save_ms365" value="1" class="btn btn-sm btn-primary"><i class="bi bi-save me-1"></i>Zapisz</button>
+    </div>
+  </form>
+
+  <?php $me = current_admin(); ?>
+  <form method="post" class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Twoje konto</div>
+    <div class="card-body">
+      <?= csrf_field() ?>
+      <div class="mb-2">
+        <label class="form-label">Login</label>
+        <input type="text" class="form-control form-control-sm" value="<?= h($me['username']) ?>" disabled>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Adres e-mail (do logowania Microsoft 365)</label>
+        <input type="email" name="account_email" class="form-control form-control-sm" value="<?= h($me['email']) ?>" placeholder="np. jan.kowalski@feer.org.pl">
+        <div class="form-text">Musi być zgodny z kontem Microsoft, którym chcesz się logować.</div>
+      </div>
+      <button type="submit" name="update_account" value="1" class="btn btn-sm btn-outline-primary">Zapisz e-mail</button>
+    </div>
   </form>
 
   <form method="post" class="card shadow-sm">

@@ -29,7 +29,18 @@ function db_migrate(PDO $pdo): void {
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         username      TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
+        email         TEXT,
+        microsoft_id  TEXT,
         created_at    DATETIME DEFAULT (datetime('now','localtime'))
+    )");
+
+    // Stan OAuth (Microsoft 365) — backup dla sesji, odporny na utratę sesji
+    // przy przekierowaniu do login.microsoftonline.com i z powrotem.
+    $pdo->exec("CREATE TABLE IF NOT EXISTS oauth_states (
+        state       TEXT PRIMARY KEY,
+        verifier    TEXT NOT NULL DEFAULT '',
+        redirect_to TEXT NOT NULL DEFAULT '',
+        created_at  INTEGER NOT NULL
     )");
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS events (
@@ -69,6 +80,10 @@ function db_migrate(PDO $pdo): void {
 
     // Kolumny dodane po pierwszym wdrożeniu (istniejące bazy) — błąd "duplicate column" ignorujemy.
     try { $pdo->exec("ALTER TABLE events ADD COLUMN presentation_public INTEGER NOT NULL DEFAULT 1"); } catch (\Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE admins ADD COLUMN email TEXT"); } catch (\Throwable $e) {}
+    try { $pdo->exec("ALTER TABLE admins ADD COLUMN microsoft_id TEXT"); } catch (\Throwable $e) {}
+    try { $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admins_email ON admins(email) WHERE email IS NOT NULL"); } catch (\Throwable $e) {}
+    try { $pdo->exec("DELETE FROM oauth_states WHERE created_at < " . (time() - 900)); } catch (\Throwable $e) {}
 }
 
 function db_one(string $sql, array $params = []): ?array {

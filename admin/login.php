@@ -3,6 +3,7 @@ require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/includes/db.php';
 require_once dirname(__DIR__) . '/includes/functions.php';
 require_once dirname(__DIR__) . '/includes/auth.php';
+require_once dirname(__DIR__) . '/includes/ms365.php';
 
 auth_start();
 if (current_admin()) redirect(APP_URL . '/admin/index.php');
@@ -35,6 +36,15 @@ $next = $_GET['next'] ?? '';
   <h1 class="h4 mb-3 text-center">Panel admina</h1>
   <p class="text-center text-muted small mb-4">Wydarzenia Online — FEER</p>
   <?php if ($error): ?><div class="alert alert-danger py-2"><?= h($error) ?></div><?php endif; ?>
+  <?php if (ms365_available()): ?>
+    <a href="<?= APP_URL ?>/admin/ms365_login.php?next=<?= urlencode($next) ?>" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2 mb-3">
+      <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
+      Zaloguj przez Microsoft 365
+    </a>
+    <div class="d-flex align-items-center gap-2 mb-3 text-muted small">
+      <hr class="flex-grow-1"><span>lub</span><hr class="flex-grow-1">
+    </div>
+  <?php endif; ?>
   <form method="post" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="next" value="<?= h($next) ?>">
