@@ -10,9 +10,15 @@ if (file_exists(__DIR__ . '/config.local.php')) {
 
 if (!defined('APP_URL')) {
     define('APP_URL', (function () {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        return rtrim($scheme . '://' . $host, '/');
+        // Zmienna środowiskowa ma priorytet (np. w Docker)
+        if ($env = getenv('APP_URL')) return rtrim($env, '/');
+        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host    = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        // Wykryj podkatalog wdrożenia (np. /webinars-vod), gdy aplikacja nie stoi w document rootcie.
+        $docRoot = rtrim(str_replace('\\', '/', realpath($_SERVER['DOCUMENT_ROOT'] ?? '')), '/');
+        $appDir  = rtrim(str_replace('\\', '/', realpath(__DIR__)), '/');
+        $path    = ($docRoot && str_starts_with($appDir, $docRoot)) ? substr($appDir, strlen($docRoot)) : '';
+        return rtrim($scheme . '://' . $host . $path, '/');
     })());
 }
 
