@@ -1,0 +1,10 @@
+<?php
+/**
+ * Skopiuj do config.local.php i dostosuj (plik nie jest wersjonowany w git).
+ */
+
+define('SZO_FEED_URL', 'https://szo.feer.org.pl/events/public/feed.php');
+define('APP_KEY', 'wygeneruj-losowy-ciąg-znaków');
+
+// Opcjonalnie: własna ścieżka do bazy SQLite (domyślnie data/events.db)
+// define('DB_PATH', __DIR__ . '/data/events.db');

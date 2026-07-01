@@ -1,0 +1,4 @@
+/data/*.db
+/data/*.db-*
+/data/*.log
+/config.local.php
